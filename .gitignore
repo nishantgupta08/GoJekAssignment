@@ -16,3 +16,4 @@ models/*.pkl
 .ipynb_checkpoints/
 *.docx
 *.csv
+!submission/results.csv
