@@ -1,4 +1,13 @@
-features=["trip_distance", "driver_distance", "event_hour", "driver_gps_accuracy"]
+features=["driver_gps_accuracy",
+    "trip_distance",
+    "hourofday",
+    "hourofday_average",
+    "driver_hourofday_average",
+    "dayofweek",
+    "dayofweek_average",
+    "driver_dayofweek_average"
+    ]
+
 target="is_accepted"
 test_size=0.2
 
