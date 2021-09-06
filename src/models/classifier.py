@@ -4,6 +4,8 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
+from sklearn.metrics import f1_score
+
 
 
 class Classifier(ABC):
@@ -32,10 +34,14 @@ class SklearnClassifier(Classifier):
         self.clf.fit(df_train[self.features].values, df_train[self.target].values)
 
     def evaluate(self, df_test: pd.DataFrame):
-        raise NotImplementedError(
-            f"You're almost there! Identify an appropriate evaluation metric for your model and implement it here. "
-            f"The expected output is a dictionary of the following schema: {{metric_name: metric_score}}"
-        )
+        metrics={}
+
+        y_true=df_test[self.target].values
+        y_pred=self.clf.predict(df_test[self.features].values)
+
+        metrics["f_score_class_1"]=f1_score(y_true,y_pred,pos_label=1)
+        metrics["f_score_class_0"]=f1_score(y_true,y_pred,pos_label=0)
+        return metrics
 
     def predict(self, df: pd.DataFrame):
         return self.clf.predict_proba(df[self.features].values)[:, 1]
