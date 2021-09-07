@@ -54,6 +54,14 @@ def temporal_features(df: pd.DataFrame) -> pd.DataFrame:
     
     return df   
 
+def get_cartesian(lat=None,lon=None):
+    lat, lon = np.deg2rad(lat), np.deg2rad(lon)
+    R = 6371 # radius of the earth
+    x = R * np.cos(lat) * np.cos(lon)
+    y = R * np.cos(lat) * np.sin(lon)
+    z = R *np.sin(lat)
+    return [x,y,z]
+
 def geographical_features(df:pd.DataFrame) -> pd.DataFrame:
     '''Used HDBSCAN clustering algorithm as KMeans doesn't work well for geosptial 
        data reason being non linear separability.
@@ -62,19 +70,28 @@ def geographical_features(df:pd.DataFrame) -> pd.DataFrame:
        similarly driver being at some particular clusters could have more  acceptance rate. 
     '''
     store = AssignmentStore()
-    # model_customer = pickle.load(open("models//clusterer_customer.sav", "rb" ))
-    df_cord_customer = df[["pickup_latitude", "pickup_longitude"]]
-    # cluster_customer_labels,probabilities = hdbscan.approximate_predict(model_customer,np.radians(df_cord_customer))
-    # Computed on another machine 
-    cluster_labels_train_server = store.get_processed("cluster_labels_train_server.csv")
-    df["cluster_customer_labels"] = cluster_labels_train_server["customer_labels"]
     
-    # model_driver = pickle.load(open("models//clusterer_driver.sav", "rb" ))
+    
+    df_cord_customer = df[["pickup_latitude", "pickup_longitude"]]
     df_cord_driver = df[["driver_latitude", "driver_longitude"]]
-    # cluster_driver_labels,probabilities = hdbscan.approximate_predict(model_driver,df_cord_driver)
+    
+
     # Computed on another machine 
-    cluster_labels_train_server = store.get_processed("cluster_labels_train_server.csv")
-    df["cluster_driver_labels"] = cluster_labels_train_server["driver_labels"]
+    # model_customer = pickle.load(open("models//clusterer_customer.sav", "rb" ))
+    # cluster_customer_labels,probabilities = hdbscan.approximate_predict(model_customer,np.radians(df_cord_customer))
+    # cluster_labels_train_server = store.get_processed("cluster_labels_train_server.csv")
+    # df["cluster_customer_labels"] = cluster_labels_train_server["customer_labels"]
+    
+    # Computed on another machine 
+    # cluster_driver_labels,probabilities = hdbscan.approximate_predict(model_driver,df_cord_driver)
+    # cluster_labels_train_server = store.get_processed("cluster_labels_train_server.csv")
+    # df["cluster_driver_labels"] = cluster_labels_train_server["driver_labels"]
+
+    model = store.get_model("kmeanModel.pkl")
+    df_cord_driver_cartesian = pd.DataFrame(df_cord_driver.apply(lambda x: get_cartesian(x["driver_latitude"],x["driver_longitude"]),axis=1).tolist())
+    df_cord_customer_cartesian = pd.DataFrame(df_cord_customer.apply(lambda x: get_cartesian(x["pickup_latitude"],x["pickup_longitude"]),axis=1).tolist())    
+    df["driver_cluster_label"] = model.predict(df_cord_driver_cartesian)
+    df["customer_cluster_label"] = model.predict(df_cord_customer_cartesian)
     
     return df
 
@@ -88,7 +105,6 @@ def participant_general_specific_features(df: pd.DataFrame) -> pd.DataFrame:
     hourofday_features = store.get_processed("hourofday_features_train.csv")
     last5day_features_train = store.get_processed("last5day_features_train.csv")
 
-    keyboard()
     last5day_features_train_group = last5day_features_train.groupby("driver_id")[["driver_id","is_accepted_last5day_rolling_mean"]].tail(1).reset_index() 
     
     df = df.merge(last5day_features_train_group[["driver_id","is_accepted_last5day_rolling_mean"]],on=["driver_id"],how="left")
@@ -105,5 +121,10 @@ def participant_general_specific_features(df: pd.DataFrame) -> pd.DataFrame:
     df["driver_dayofweek_average"].fillna(df["dayofweek_average"],inplace = True)
     df["driver_hourofday_average"].fillna(df["hourofday_average"],inplace = True)
     df["is_accepted_last5day_rolling_mean"].fillna(df["is_accepted_last5day_rolling_mean"].mean(),inplace = True)
-    keyboard()
+    return df
+
+def participant_mean_acceptance_time(df: pd.DataFrame) -> pd.DataFrame:
+    '''
+    Creating Features to understand how quick or slow does driver accept it 
+    '''
     return df

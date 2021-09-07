@@ -15,10 +15,10 @@ from src.utils.store import AssignmentStore
 
 def main():
     store = AssignmentStore()
-    dataset = store.get_processed("dataset_train.csv")
+    dataset = store.get_processed("dataset_test.csv")
     dataset = dataset[dataset["participant_status"] != "CREATED"]
     dataset = apply_feature_engineering(dataset)
-    store.put_processed("transformed_dataset_train.csv", dataset)
+    store.put_processed("transformed_dataset_test.csv", dataset)
 
 
 def apply_feature_engineering(df: pd.DataFrame) -> pd.DataFrame:

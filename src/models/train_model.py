@@ -15,8 +15,12 @@ def main():
     store = AssignmentStore()
     config = load_config()
 
-    df = store.get_processed("transformed_dataset.csv")
-    df_train, df_test = train_test_split(df, test_size=config["test_size"])
+    #Not using normal train test split (validation done across timestamps) 
+    # df_train, df_test = train_test_split(df, test_size=config["test_size"])
+    
+    df_train = store.get_processed("transformed_dataset_train.csv")
+    df_test = store.get_processed("transformed_dataset_test.csv")
+    
 
     rf_estimator = RandomForestClassifier(**config["random_forest"])
     model = SklearnClassifier(rf_estimator, config["features"], config["target"])
